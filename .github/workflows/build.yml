@@ -39,19 +39,34 @@ jobs:
 
       - name: Add WiX to PATH (Windows)
         if: matrix.target == 'win'
+        shell: pwsh
         run: |
-          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
-          if (Test-Path $wixPath) {
-            echo "$wixPath exists"
-            echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          } else {
-            $wixPath = "C:\Program Files\WiX Toolset v3.14\bin"
-            if (Test-Path $wixPath) {
-              echo "$wixPath exists"
-              echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $paths = @(
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+            "C:\Program Files\WiX Toolset v3.14\bin",
+            "C:\Program Files (x86)\WiX Toolset v3.11\bin",
+            "C:\Program Files\WiX Toolset v3.11\bin"
+          )
+          $found = $false
+          foreach ($p in $paths) {
+            if (Test-Path "$p\light.exe") {
+              echo "Found WiX at $p"
+              echo "$p" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              $found = $true
+              break
             }
           }
-        shell: pwsh
+          if (-not $found) {
+            echo "WiX not found in expected paths, searching..."
+            $light = Get-ChildItem -Path "C:\Program Files*" -Recurse -Filter "light.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($light) {
+              $dir = $light.DirectoryName
+              echo "Found light.exe at $dir"
+              echo "$dir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            } else {
+              echo "WARNING: light.exe not found, MSI build may fail"
+            }
+          }
 
       - name: Install dependencies
         run: npm ci
