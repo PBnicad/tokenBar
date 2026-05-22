@@ -25,6 +25,12 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
       - name: Install dependencies
         run: npm ci
 
@@ -35,19 +41,39 @@ jobs:
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Skip code signing on CI (optional — remove if you have certificates)
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          # macOS notarization (optional — remove if not using Apple Developer ID)
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Upload build artifacts
+      - name: Upload Windows MSI
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.os }}
-          path: dist/*
-          if-no-files-found: ignore
+          name: win-msi
+          path: dist/*.msi
+          if-no-files-found: error
+
+      - name: Upload macOS DMG (x64)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg-x64
+          path: dist/*-x64.dmg
+          if-no-files-found: error
+
+      - name: Upload macOS DMG (arm64)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg-arm64
+          path: dist/*-arm64.dmg
+          if-no-files-found: error
+
+      - name: Upload Linux AppImage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
 
   release:
     needs: build
