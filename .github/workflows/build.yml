@@ -37,10 +37,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libfuse2
 
-      - name: Add WiX to PATH (Windows)
+      - name: Install WiX (Windows)
         if: matrix.target == 'win'
         shell: pwsh
         run: |
+          # First, check if WiX is already available
+          $light = Get-Command light -ErrorAction SilentlyContinue
+          if ($light) {
+            echo "WiX already available at: $($light.Source)"
+            exit 0
+          }
+          # Search for light.exe in common locations
           $paths = @(
             "C:\Program Files (x86)\WiX Toolset v3.14\bin",
             "C:\Program Files\WiX Toolset v3.14\bin",
@@ -57,15 +64,19 @@ jobs:
             }
           }
           if (-not $found) {
-            echo "WiX not found in expected paths, searching..."
-            $light = Get-ChildItem -Path "C:\Program Files*" -Recurse -Filter "light.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($light) {
-              $dir = $light.DirectoryName
-              echo "Found light.exe at $dir"
-              echo "$dir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            } else {
-              echo "WARNING: light.exe not found, MSI build may fail"
+            echo "WiX not found, installing via Chocolatey..."
+            choco install wixtoolset -y --no-progress
+            $chocoWix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+            if (Test-Path "$chocoWix\light.exe") {
+              echo "$chocoWix" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
             }
+          }
+          # Verify
+          $light = Get-Command light -ErrorAction SilentlyContinue
+          if ($light) {
+            echo "WiX verified: $($light.Source)"
+          } else {
+            echo "WARNING: WiX still not found after installation"
           }
 
       - name: Install dependencies
@@ -75,10 +86,19 @@ jobs:
         run: npm run build
 
       - name: Build & package Electron app
-        run: npm run dist
+        run: npm run dist:${{ matrix.target }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List dist contents (diagnostic)
+        if: always()
+        shell: bash
+        run: |
+          echo "=== dist contents ==="
+          ls -la dist/ || echo "dist directory not found"
+          echo "=== dist files ==="
+          find dist -type f -name "*" | head -50 || true
 
       - name: Rename macOS x64 DMG
         if: matrix.target == 'mac'
