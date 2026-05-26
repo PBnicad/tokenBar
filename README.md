@@ -1,6 +1,6 @@
-# opencodeBar
+# tokenBar
 
-> 一款轻量级的 Electron 桌面应用，用于可视化监控本地 opencode 模型调用情况。
+> A lightweight Electron desktop app for visualizing AI agent token usage — OpenCode, Pi Agent, and more.
 
 [English](#english) | [中文](#chinese)
 
@@ -11,16 +11,17 @@
 
 ### 功能特性
 
-- **直连 SQLite** — 直接读取 `opencode.db`，无需启动 `opencode serve` 服务进程
-- **仪表盘** — 总览卡片 + 自定义堆叠柱状图（成本/Token）+ SVG 环形图 + 日历热力图
+- **多 Agent 支持** — 适配器架构，同时监控 OpenCode、Pi Agent 等 AI 编程工具的 Token 用量
+- **仪表盘** — 总览卡片 + 自定义日期范围选择器 + 堆叠柱状图（花费/Token）+ SVG 环形图 + 全年日历热力图
 - **模型页** — 按模型维度展示使用卡片，每张卡片内含独立的迷你热力图
-- **会话页** — 可搜索的分页历史记录列表，支持详情滑出面板
-- **GitHub 风格日历热力图** — 支持 M/W/F 标签、5 级绿色强度、自定义 Tooltip（Token 明细、成本、消息数）
-- **国际化** — 支持中文 / 英语切换（懒加载语言包）
-- **主题切换** — 默认暗色模式，可选浅色模式
-- **数据库路径配置** — 自动探测常见安装位置，支持手动浏览选择
-- **自动同步** — 启动时全量同步，文件修改后每 30 秒增量同步
-- **CI/CD 自动构建** — GitHub Actions 自动构建 Windows / macOS / Linux 安装包并发布 Release
+- **会话页** — 可搜索的分页历史记录，支持 Agent 来源筛选 + 详情滑出面板
+- **GitHub 风格日历热力图** — 5 级强度、自定义 Tooltip（Token 明细、花费、消息数）
+- **系统托盘** — 关闭窗口最小化到托盘，右键菜单退出
+- **国际化** — 中文 / English 切换
+- **主题切换** — 深色 / 浅色模式
+- **Agent 路径配置** — 每个 Agent 独立配置数据源路径，支持自动检测和手动浏览
+- **自动同步** — 启动时全量同步，15s 轮询增量同步，30s 定期聚合刷新
+- **CI/CD 自动构建** — GitHub Actions 构建 Windows / macOS / Linux 安装包
 
 ### 技术栈
 
@@ -30,73 +31,71 @@
 | Vite | 构建工具 |
 | React 18 + TypeScript | UI 框架 |
 | sql.js (WASM) | 浏览器端 SQLite |
-| CSS Variables | 主题系统（暗色/浅色） |
+| MiSans | 小米开源字体 |
+| CSS Variables | 主题系统 |
 
 ### 快速开始
 
 ```bash
-# 克隆仓库
 git clone https://github.com/PBnicad/opencodeBar.git
 cd opencodeBar
 
-# 安装依赖
 npm install
-
-# 开发模式
-npm run dev
-
-# 构建生产包
-npm run build
-
-# 打包分发（当前平台）
-npm run dist
-
-# 打包特定平台
-npm run dist:win
-npm run dist:mac
-npm run dist:linux
+npm run dev          # 开发模式
+npm run build        # 生产构建
+npm run dist         # 打包当前平台
+npm run dist:win     # Windows
+npm run dist:mac     # macOS
+npm run dist:linux   # Linux
 ```
 
 ### 自动发布
 
-推送符合语义化版本的 tag 即可触发 CI/CD 自动构建并发布 Release：
+推送语义化版本 tag 触发 CI/CD：
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Actions 会在 Windows、macOS、Linux 上并行构建，完成后自动创建 GitHub Release 并上传安装包。
+### Agent 数据源
 
-### 数据库路径
+| Agent | 数据格式 | 默认路径 |
+|-------|---------|---------|
+| OpenCode | SQLite（opencode.db） | `~/.local/share/opencode/opencode.db` |
+| Pi Agent | JSONL 会话文件 | `~/.pi/agent/sessions/` |
 
-应用启动时会自动探测以下位置的 `opencode.db`：
-- Windows: `%LOCALAPPDATA%\opencode\opencode.db`
-- macOS: `~/Library/Application Support/opencode/opencode.db`
-- Linux: `~/.local/share/opencode/opencode.db` 或 `$XDG_DATA_HOME/opencode/opencode.db`
+可在 **设置 → Data Sources** 中为每个 Agent 单独配置路径。
 
-也可在 **设置 → 数据库路径** 中手动指定。
+### 接入新 Agent
+
+在 `src/main/adapters/` 下新建文件实现 `AgentAdapter` 接口（5 个方法），然后在 `index.ts` 中 `registerAdapter()` 即可。
 
 ### 项目结构
 
 ```
-opencodeBar/
-├── .github/workflows/      # GitHub Actions CI/CD
+tokenbar/
+├── .github/workflows/      # CI/CD
 ├── src/
-│   ├── main/               # Electron 主进程
-│   │   ├── local-reader.ts # SQLite 直连读取
-│   │   ├── db.ts           # 本地数据库 + app_settings
+│   ├── main/
+│   │   ├── adapters/       # Agent 适配器（opencode, pi-agent, ...）
+│   │   │   ├── types.ts    # AgentAdapter 接口
+│   │   │   ├── registry.ts # 适配器注册表
+│   │   │   ├── opencode.ts # OpenCode 适配器
+│   │   │   └── pi-agent.ts # Pi Agent 适配器
+│   │   ├── db.ts           # 本地聚合数据库
 │   │   ├── ipc.ts          # IPC 通信
-│   │   └── sync.ts         # 同步逻辑
+│   │   ├── sync.ts         # 多 Agent 同步引擎
+│   │   └── index.ts        # 主进程入口
 │   ├── preload/            # 预加载脚本
 │   ├── renderer/           # 渲染进程 (React)
-│   │   ├── components/     # 共享组件
+│   │   ├── components/     # 共享组件（TitleBar, DateRangePicker, StyledDropdown 等）
 │   │   ├── pages/          # Dashboard / Models / Sessions
 │   │   ├── i18n/           # 国际化
 │   │   ├── styles/         # 全局 CSS + 主题变量
 │   │   └── theme/          # 主题上下文
 │   └── shared/             # 共享类型
-├── build/                  # 应用图标等资源
+├── build/                  # 应用图标
 └── package.json
 ```
 
@@ -111,16 +110,17 @@ opencodeBar/
 
 ### Features
 
-- **Direct SQLite Read** — Reads `opencode.db` directly without spawning `opencode serve`
-- **Dashboard** — Overview cards + custom stacked bar chart (cost/tokens) + SVG donut chart + calendar heatmap
+- **Multi-Agent Support** — Adapter architecture monitors OpenCode, Pi Agent, and more simultaneously
+- **Dashboard** — Overview cards + custom date range picker + stacked bar charts (cost/tokens) + SVG donut + yearly heatmap
 - **Models Page** — Per-model usage cards with individual mini heatmaps
-- **Sessions Page** — Searchable paginated history with detail slide-out panel
-- **GitHub-style Calendar Heatmap** — M/W/F labels, 5-level green intensity, custom tooltip (token breakdown, cost, messages)
-- **i18n** — Chinese / English with lazy-loaded locale files
-- **Theme Switching** — Dark mode default, optional light mode
-- **Configurable DB Path** — Auto-detect common locations + manual browse
-- **Auto Sync** — Full sync on startup, incremental sync every 30s when DB mtime changes
-- **CI/CD Auto Build** — GitHub Actions builds for Windows / macOS / Linux and auto-publishes releases
+- **Sessions Page** — Searchable paginated history with agent source filter + detail slide-out panel
+- **GitHub-style Calendar Heatmap** — 5-level intensity, custom tooltip (token breakdown, cost, messages)
+- **System Tray** — Close to tray, right-click to quit
+- **i18n** — Chinese / English
+- **Theme** — Dark / Light mode
+- **Per-Agent Path Config** — Independent data source path per agent, auto-detect or manual browse
+- **Auto Sync** — Full sync on startup, 15s incremental polling, 30s periodic aggregation
+- **CI/CD** — GitHub Actions for Windows / macOS / Linux
 
 ### Tech Stack
 
@@ -130,53 +130,60 @@ opencodeBar/
 | Vite | Build tool |
 | React 18 + TypeScript | UI framework |
 | sql.js (WASM) | In-browser SQLite |
-| CSS Variables | Theming system (dark/light) |
+| MiSans | Xiaomi open-source font |
+| CSS Variables | Theming system |
 
 ### Quick Start
 
 ```bash
 git clone https://github.com/PBnicad/opencodeBar.git
 cd opencodeBar
+
 npm install
-npm run dev       # development
-npm run build     # production build
-npm run dist      # package for current platform
-npm run dist:win  # Windows
-npm run dist:mac  # macOS
-npm run dist:linux # Linux
+npm run dev          # development
+npm run build        # production build
+npm run dist         # package current platform
+npm run dist:win     # Windows
+npm run dist:mac     # macOS
+npm run dist:linux   # Linux
 ```
 
 ### Auto Release
-
-Push a semantic version tag to trigger CI/CD:
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-GitHub Actions will build in parallel on Windows, macOS, and Linux, then automatically create a GitHub Release with installable artifacts.
+### Agent Data Sources
 
-### DB Path Auto-Detection
+| Agent | Format | Default Path |
+|-------|--------|-------------|
+| OpenCode | SQLite (opencode.db) | `~/.local/share/opencode/opencode.db` |
+| Pi Agent | JSONL session files | `~/.pi/agent/sessions/` |
 
-On startup, the app auto-detects `opencode.db` at:
-- Windows: `%LOCALAPPDATA%\opencode\opencode.db`
-- macOS: `~/Library/Application Support/opencode/opencode.db`
-- Linux: `~/.local/share/opencode/opencode.db` or `$XDG_DATA_HOME/opencode/opencode.db`
+Configure each agent's path independently in **Settings → Data Sources**.
 
-You can also manually set the path in **Settings → Database Path**.
+### Adding a New Agent
+
+Create a file in `src/main/adapters/` implementing the `AgentAdapter` interface (5 methods), then call `registerAdapter()` in `index.ts`.
 
 ### Project Structure
 
 ```
-opencodeBar/
-├── .github/workflows/      # GitHub Actions CI/CD
+tokenbar/
+├── .github/workflows/      # CI/CD
 ├── src/
-│   ├── main/               # Electron main process
-│   │   ├── local-reader.ts # Direct SQLite reader
-│   │   ├── db.ts           # Local DB + app_settings
+│   ├── main/
+│   │   ├── adapters/       # Agent adapters (opencode, pi-agent, ...)
+│   │   │   ├── types.ts    # AgentAdapter interface
+│   │   │   ├── registry.ts # Adapter registry
+│   │   │   ├── opencode.ts # OpenCode adapter
+│   │   │   └── pi-agent.ts # Pi Agent adapter
+│   │   ├── db.ts           # Local aggregation DB
 │   │   ├── ipc.ts          # IPC handlers
-│   │   └── sync.ts         # Sync logic
+│   │   ├── sync.ts         # Multi-agent sync engine
+│   │   └── index.ts        # Main process entry
 │   ├── preload/            # Preload script
 │   ├── renderer/           # Renderer (React)
 │   │   ├── components/     # Shared components
@@ -185,7 +192,7 @@ opencodeBar/
 │   │   ├── styles/         # Global CSS + theme vars
 │   │   └── theme/          # Theme context
 │   └── shared/             # Shared types
-├── build/                  # App icons etc.
+├── build/                  # App icon
 └── package.json
 ```
 

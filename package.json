@@ -1,7 +1,7 @@
 {
-  "name": "opencodebar",
+  "name": "tokenbar",
   "version": "0.1.0",
-  "description": "Monitor opencode model usage across sessions",
+  "description": "Monitor AI agent token usage across sessions",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "concurrently -k --names renderer,electron \"vite dev --config vite.renderer.config.ts --port 5173 --strictPort --host 127.0.0.1\" \"wait-on tcp:127.0.0.1:5173 && npx electron . --dev\"",
@@ -15,8 +15,8 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "appId": "com.opencodebar.app",
-    "productName": "opencodeBar",
+    "appId": "com.tokenbar.app",
+    "productName": "tokenBar",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -26,13 +26,22 @@
       "package.json"
     ],
     "win": {
+      "signAndEditExecutable": false,
       "target": [
         {
-          "target": "msi",
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
           "arch": ["x64"]
         }
       ],
       "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "mac": {
       "target": [

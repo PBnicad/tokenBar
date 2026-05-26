@@ -1,6 +1,6 @@
 const zh = {
   app: {
-    title: 'opencodeBar',
+    title: 'tokenBar',
   },
   nav: {
     dashboard: '仪表盘',
@@ -75,6 +75,9 @@ const zh = {
   },
   settings: {
     title: '设置',
+    dataSources: '数据源',
+    dataSourcesDesc: '配置每个 Agent 的数据存储位置。留空则使用默认自动检测路径。',
+    appearance: '外观',
     database: '数据库',
     dbPath: '数据文件路径',
     dbPathDesc: 'opencode.db 文件位置，支持自动检测或手动选择',
@@ -93,6 +96,8 @@ const zh = {
     themeDesc: '深色 / 浅色模式',
     dark: '深色',
     light: '浅色',
+    agentConnected: '已连接',
+    agentNotFound: '未找到',
   },
   common: {
     cost: '花费',

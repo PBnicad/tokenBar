@@ -20,7 +20,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['echarts', 'echarts-for-react', 'dayjs'],
+    include: ['dayjs'],
     force: true
   }
 })

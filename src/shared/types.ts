@@ -3,6 +3,7 @@ export interface SessionRow {
   project_id: string
   directory: string
   title: string
+  source: string
   created_at: number
   updated_at: number
   synced_at: number
@@ -13,6 +14,7 @@ export interface MessageRow {
   session_id: string
   provider_id: string
   model_id: string
+  source: string
   cost: number
   tokens_input: number
   tokens_output: number
@@ -42,6 +44,7 @@ export interface HourlyUsageRow {
   hour: string
   model_id: string
   provider_id: string
+  source: string
   cost: number
   tokens_input: number
   tokens_output: number
@@ -53,6 +56,7 @@ export interface DailyUsageRow {
   date: string
   model_id: string
   provider_id: string
+  source: string
   cost: number
   tokens_input: number
   tokens_output: number
@@ -103,6 +107,7 @@ export interface SessionListItem {
   title: string
   provider_id: string
   model_id: string
+  source: string
   cost: number
   tokens_total: number
   message_count: number
@@ -121,4 +126,5 @@ export interface SettingsData {
   serverPort: number
   syncOnStart: boolean
   dbPath: string
+  piAgentSessionDir: string
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import { api } from '../api'
 import { useT } from '../i18n'
+import { SourceDropdown } from '../components/SourceDropdown'
 import type { SessionListItem, SessionDetail } from '@shared/types'
 
 function formatCost(v: number) { return `$${v.toFixed(4)}` }
@@ -17,19 +18,28 @@ export function Sessions() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [sourceFilter, setSourceFilter] = useState<string>('')
   const [detail, setDetail] = useState<SessionDetail | null>(null)
   const limit = 20
 
-  useEffect(() => { loadSessions() }, [page, search])
+  const src = sourceFilter || undefined
+
+  useEffect(() => { loadSessions() }, [page, search, sourceFilter])
+
+  // Listen for background data updates (reload current page)
+  useEffect(() => {
+    const unsub = api.onDataUpdated(() => loadSessions())
+    return unsub
+  }, [page, search, sourceFilter])
 
   const loadSessions = async () => {
-    const result = await api.sessionList({ page, limit, search: search || undefined })
+    const result = await api.sessionList({ page, limit, search: search || undefined, source: src })
     setSessions(result.sessions)
     setTotal(result.total)
   }
 
-  const openDetail = async (id: string) => {
-    const d = await api.sessionDetail(id)
+  const openDetail = async (id: string, source?: string) => {
+    const d = await api.sessionDetail(id, source)
     setDetail(d)
   }
 
@@ -40,6 +50,17 @@ export function Sessions() {
       <div className="page-header">
         <h2>{t('sessions.title')}</h2>
         <p>{t('sessions.subtitle', { total })}</p>
+        <div style={{ marginTop: 8 }}>
+          <SourceDropdown
+            value={sourceFilter}
+            onChange={(v) => { setSourceFilter(v); setPage(1) }}
+            options={[
+              { value: '', label: 'All agents' },
+              { value: 'opencode', label: 'OpenCode' },
+              { value: 'pi-agent', label: 'Pi Agent' },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="session-controls">
@@ -55,6 +76,7 @@ export function Sessions() {
         <thead>
           <tr>
             <th>{t('sessions.titleCol')}</th>
+            <th>Source</th>
             <th>{t('sessions.model')}</th>
             <th>{t('sessions.cost')}</th>
             <th>{t('sessions.tokens')}</th>
@@ -64,8 +86,11 @@ export function Sessions() {
         </thead>
         <tbody>
           {sessions.map((s) => (
-            <tr key={s.id} onClick={() => openDetail(s.id)}>
+            <tr key={`${s.source}:${s.id}`} onClick={() => openDetail(s.id, s.source)}>
               <td style={{ color: 'var(--text-primary)' }}>{s.title}</td>
+              <td style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                {s.source}
+              </td>
               <td style={{ color: 'var(--accent-text)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>
                 {s.model_id || t('sessions.unknown')}
               </td>
@@ -79,7 +104,7 @@ export function Sessions() {
           ))}
           {sessions.length === 0 && (
             <tr>
-              <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>
+              <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>
                 {t('sessions.noSessions')}
               </td>
             </tr>

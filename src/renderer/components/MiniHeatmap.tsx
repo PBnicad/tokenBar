@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useLayoutEffect } from 'react'
 import dayjs from 'dayjs'
 
 const chartColors = ['#e8a840', '#5e9cf5', '#3ecf8e', '#f3565e', '#b06fff', '#40c4d8', '#ff8a65', '#a0d468']
@@ -129,17 +129,54 @@ export function MiniHeatmap({
   )
 }
 
+function clampTooltip(el: HTMLElement, anchorX: number, anchorY: number, gap: number = 8) {
+  const rect = el.getBoundingClientRect()
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const halfW = rect.width / 2
+
+  let left = anchorX
+  let top = anchorY
+  let tx = '-50%'
+  let ty = '-100%'
+
+  // Horizontal: keep within viewport, small padding from edges
+  if (anchorX - halfW < gap) {
+    left = gap
+    tx = '0'
+  } else if (anchorX + halfW > vw - gap) {
+    left = vw - gap
+    tx = '-100%'
+  }
+
+  // Vertical: flip below anchor if too close to top edge
+  if (anchorY - rect.height < gap) {
+    top = anchorY + gap
+    ty = '0'
+  }
+
+  el.style.left = `${left}px`
+  el.style.top = `${top}px`
+  el.style.transform = `translate(${tx}, ${ty})`
+}
+
 function HeatmapTooltip({ cell, x, y }: {
   cell: HeatmapCellData
   x: number
   y: number
 }) {
+  const ref = useRef<HTMLDivElement>(null)
   const isEmpty = cell.tokens === 0
   const weekDay = dayjs(cell.date).format('ddd')
   const dateStr = dayjs(cell.date).format('YYYY-MM-DD')
 
+  useLayoutEffect(() => {
+    if (ref.current) clampTooltip(ref.current, x, y)
+  }, [x, y])
+
   return (
     <div
+      ref={ref}
       className="heatmap-tooltip"
       style={{
         position: 'fixed',

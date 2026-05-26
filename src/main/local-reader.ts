@@ -232,8 +232,18 @@ export async function fetchSessionMessages(sessionId: string): Promise<LocalMess
         if (data.role !== 'assistant') continue
 
         const time = data.time || {}
-        const tokens = data.tokens || {}
-        const cache = tokens.cache || {}
+        // opencode may store token info under data.tokens or data.usage
+        const tokens = data.tokens || data.usage || {}
+        const cache = tokens.cache || (data.tokens && data.tokens.cache) || {}
+
+        // Helper: try multiple field name variants for a token value
+        const pickNum = (...keys: string[]): number => {
+          for (const k of keys) {
+            const v = tokens[k]
+            if (typeof v === 'number') return v
+          }
+          return 0
+        }
 
         rows.push({
           id: r.id,
@@ -244,11 +254,11 @@ export async function fetchSessionMessages(sessionId: string): Promise<LocalMess
           providerID: data.providerID || '',
           modelID: data.modelID || '',
           cost: typeof data.cost === 'number' ? data.cost : 0,
-          tokensInput: typeof tokens.input === 'number' ? tokens.input : 0,
-          tokensOutput: typeof tokens.output === 'number' ? tokens.output : 0,
-          tokensReasoning: typeof tokens.reasoning === 'number' ? tokens.reasoning : 0,
-          tokensCacheRead: typeof cache.read === 'number' ? cache.read : 0,
-          tokensCacheWrite: typeof cache.write === 'number' ? cache.write : 0,
+          tokensInput: pickNum('input', 'input_tokens', 'prompt_tokens'),
+          tokensOutput: pickNum('output', 'output_tokens', 'completion_tokens'),
+          tokensReasoning: pickNum('reasoning', 'reasoning_tokens'),
+          tokensCacheRead: typeof cache.read === 'number' ? cache.read : pickNum('cache_read', 'cache_read_input_tokens'),
+          tokensCacheWrite: typeof cache.write === 'number' ? cache.write : pickNum('cache_write', 'cache_creation_input_tokens'),
           finish: data.finish || ''
         })
       } catch { /* skip parse errors */ }

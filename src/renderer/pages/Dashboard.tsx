@@ -3,6 +3,8 @@ import dayjs from 'dayjs'
 
 import { MiniHeatmap } from '../components/MiniHeatmap'
 import { StackedBarChart, DonutChart, chartColors, formatCost, formatTokens } from '../components/DashboardCharts'
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker'
+import { SourceDropdown } from '../components/SourceDropdown'
 import { api } from '../api'
 import { useT } from '../i18n'
 import type { Overview, DailyUsageRow, ModelAggregation } from '@shared/types'
@@ -14,21 +16,33 @@ export function Dashboard() {
   const [dailyUsage, setDailyUsage] = useState<DailyUsageRow[]>([])
   const [byModel, setByModel] = useState<ModelAggregation[]>([])
   const [calendarData, setCalendarData] = useState<HeatmapCellData[]>([])
-  const [rangeDays, setRangeDays] = useState(30)
-  const [calendarDays, setCalendarDays] = useState(365)
+  const [sourceFilter, setSourceFilter] = useState<string>('')
 
-  const today = dayjs().format('YYYY-MM-DD')
-  const from = dayjs().subtract(rangeDays - 1, 'day').format('YYYY-MM-DD')
-  const calFrom = dayjs().subtract(calendarDays - 1, 'day').format('YYYY-MM-DD')
+  const today = dayjs()
+  const [dateRange, setDateRange] = useState<DateRange>(() => ({
+    from: today.subtract(29, 'day').format('YYYY-MM-DD'),
+    to: today.format('YYYY-MM-DD'),
+  }))
+  const calFrom = today.subtract(364, 'day').format('YYYY-MM-DD')
+  const calTo = today.format('YYYY-MM-DD')
 
-  useEffect(() => { loadData() }, [rangeDays, calendarDays])
+  const { from, to } = dateRange
+  const src = sourceFilter || undefined
+
+  useEffect(() => { loadData() }, [from, to, sourceFilter])
+
+  // Listen for background data updates (sync, periodic aggregation)
+  useEffect(() => {
+    const unsub = api.onDataUpdated(() => loadData())
+    return unsub
+  }, [from, to, sourceFilter])
 
   const loadData = async () => {
     const [o, d, m, c] = await Promise.all([
-      api.overview(),
-      api.dailyUsage(from, today),
-      api.byModel(from, today),
-      api.dailyTotals(calFrom, today)
+      api.overview(src, from, to),
+      api.dailyUsage(from, to, src),
+      api.byModel(from, to, src),
+      api.dailyTotals(calFrom, calTo, src)
     ])
     setOverview(o)
     setDailyUsage(d)
@@ -87,6 +101,26 @@ export function Dashboard() {
       <div className="page-header">
         <h2>{t('dashboard.title')}</h2>
         <p>{t('dashboard.subtitle')}</p>
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <SourceDropdown
+            value={sourceFilter}
+            onChange={setSourceFilter}
+            options={[
+              { value: '', label: 'All agents' },
+              { value: 'opencode', label: 'OpenCode' },
+              { value: 'pi-agent', label: 'Pi Agent' },
+            ]}
+          />
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            presets={[
+              { label: '7d', days: 7 },
+              { label: '30d', days: 30 },
+              { label: '90d', days: 90 },
+            ]}
+          />
+        </div>
       </div>
 
       {overview && (
@@ -118,13 +152,6 @@ export function Dashboard() {
         <div className="chart-section">
           <div className="chart-section-header">
             <h3>{t('dashboard.dailyCost')}</h3>
-            <div className="chart-tabs">
-              {[7, 30, 90].map((d) => (
-                <button key={d} className={rangeDays === d ? 'active' : ''} onClick={() => setRangeDays(d)}>
-                  {d}d
-                </button>
-              ))}
-            </div>
           </div>
           <div className="chart-container">
             {costBarData.length > 0 ? (
@@ -167,19 +194,12 @@ export function Dashboard() {
         <div className="chart-section" style={{ gridColumn: '1 / -1' }}>
           <div className="chart-section-header">
             <h3>{t('dashboard.tokenHeatmap')}</h3>
-            <div className="chart-tabs">
-              {[90, 180, 365].map((d) => (
-                <button key={d} className={calendarDays === d ? 'active' : ''} onClick={() => setCalendarDays(d)}>
-                  {d}d
-                </button>
-              ))}
-            </div>
           </div>
           <div className="chart-container">
             {calendarData.length > 0 ? (
               <MiniHeatmap
                 data={calendarData}
-                weeks={Math.ceil(calendarDays / 7)}
+                weeks={52}
                 showLabels={true}
                 cellSize={14}
               />

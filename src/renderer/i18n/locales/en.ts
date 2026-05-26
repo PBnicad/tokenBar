@@ -1,6 +1,6 @@
 const en = {
   app: {
-    title: 'opencodeBar',
+    title: 'tokenBar',
   },
   nav: {
     dashboard: 'Dashboard',
@@ -75,6 +75,9 @@ const en = {
   },
   settings: {
     title: 'Settings',
+    dataSources: 'Data Sources',
+    dataSourcesDesc: 'Configure where each agent stores its data. Leave blank to use default auto-detection.',
+    appearance: 'Appearance',
     database: 'Database',
     dbPath: 'Database File Path',
     dbPathDesc: 'Location of opencode.db, auto-detect or manually select',
@@ -93,6 +96,8 @@ const en = {
     themeDesc: 'Dark / Light mode',
     dark: 'Dark',
     light: 'Light',
+    agentConnected: 'Connected',
+    agentNotFound: 'Not found',
   },
   common: {
     cost: 'Cost',
