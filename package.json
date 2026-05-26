@@ -10,7 +10,7 @@
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
-    "postinstall": "npx electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps"
   },
   "build": {
     "appId": "com.tokenbar.app",
