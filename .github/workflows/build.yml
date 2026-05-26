@@ -37,6 +37,45 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libfuse2
 
+      - name: Install WiX (Windows)
+        if: matrix.target == 'win'
+        shell: pwsh
+        run: |
+          $light = Get-Command light -ErrorAction SilentlyContinue
+          if ($light) {
+            echo "WiX already available at: $($light.Source)"
+            exit 0
+          }
+          $paths = @(
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+            "C:\Program Files\WiX Toolset v3.14\bin",
+            "C:\Program Files (x86)\WiX Toolset v3.11\bin",
+            "C:\Program Files\WiX Toolset v3.11\bin"
+          )
+          $found = $false
+          foreach ($p in $paths) {
+            if (Test-Path "$p\light.exe") {
+              echo "Found WiX at $p"
+              echo "$p" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              $found = $true
+              break
+            }
+          }
+          if (-not $found) {
+            echo "WiX not found, installing via Chocolatey..."
+            choco install wixtoolset -y --no-progress
+            $chocoWix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+            if (Test-Path "$chocoWix\light.exe") {
+              echo "$chocoWix" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            }
+          }
+          $light = Get-Command light -ErrorAction SilentlyContinue
+          if ($light) {
+            echo "WiX verified: $($light.Source)"
+          } else {
+            echo "WARNING: WiX still not found after installation"
+          }
+
       - name: Install dependencies
         run: npm ci
 
