@@ -99,6 +99,11 @@ const zh = {
     light: '浅色',
     agentConnected: '已连接',
     agentNotFound: '未找到',
+    opencodeGo: 'OpenCode Go',
+    opencodeGoDesc: '云端订阅用量（滚动/每周/每月）。从 opencode.ai 获取凭证。',
+    ogWorkspaceId: 'Workspace ID',
+    ogAuthCookie: 'Auth Cookie',
+    ogCookieDesc: '浏览器 DevTools → Application → Cookies → opencode.ai → auth',
   },
   common: {
     cost: '花费',

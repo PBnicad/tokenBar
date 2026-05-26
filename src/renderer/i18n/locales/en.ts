@@ -99,6 +99,11 @@ const en = {
     light: 'Light',
     agentConnected: 'Connected',
     agentNotFound: 'Not found',
+    opencodeGo: 'OpenCode Go',
+    opencodeGoDesc: 'Cloud subscription quota (rolling/weekly/monthly). Credentials from your opencode.ai session.',
+    ogWorkspaceId: 'Workspace ID',
+    ogAuthCookie: 'Auth Cookie',
+    ogCookieDesc: 'Browser DevTools → Application → Cookies → opencode.ai → auth',
   },
   common: {
     cost: 'Cost',

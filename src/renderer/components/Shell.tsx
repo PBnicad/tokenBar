@@ -286,13 +286,13 @@ function SettingsPanel({
 
         {/* ── OpenCode Go ── */}
         <div className="settings-section">
-          <h3>OpenCode Go</h3>
+          <h3>{t('settings.opencodeGo')}</h3>
           <p className="settings-section-desc">
-            Cloud subscription quota (rolling/weekly/monthly). Credentials from your opencode.ai session.
+            {t('settings.opencodeGoDesc')}
           </p>
           <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
             <div style={{ width: '100%' }}>
-              <div className="setting-label">Workspace ID</div>
+              <div className="setting-label">{t('settings.ogWorkspaceId')}</div>
             </div>
             <input
               className="search-input"
@@ -302,8 +302,8 @@ function SettingsPanel({
               placeholder="wrk_xxxxxxxx"
             />
             <div style={{ width: '100%' }}>
-              <div className="setting-label">Auth Cookie</div>
-              <div className="setting-desc">From browser DevTools → Application → Cookies → opencode.ai → auth</div>
+              <div className="setting-label">{t('settings.ogAuthCookie')}</div>
+              <div className="setting-desc">{t('settings.ogCookieDesc')}</div>
             </div>
             <input
               className="search-input"

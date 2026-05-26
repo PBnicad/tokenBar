@@ -65,9 +65,11 @@ export function Usage() {
   }
 
   useEffect(() => {
-    api.opencodeGo.configured().then(setConfigured)
-    if (configured) fetchQuota()
-  }, [configured])
+    api.opencodeGo.configured().then((ok: boolean) => {
+      setConfigured(ok)
+      if (ok) fetchQuota()
+    })
+  }, [])
 
   return (
     <div className="page">
