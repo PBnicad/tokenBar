@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import dayjs from 'dayjs'
 import { api } from '../api'
 import { useT } from '../i18n'
 import { MiniHeatmap } from '../components/MiniHeatmap'
@@ -84,7 +85,7 @@ export function Usage() {
     if (!data || data.usageHistory.length === 0) return []
     const byDate = new Map<string, { tokens: number; input: number; output: number; reasoning: number; cost: number; messages: number }>()
     for (const r of data.usageHistory) {
-      const date = r.timeCreated.slice(0, 10)
+      const date = dayjs(r.timeCreated).format('YYYY-MM-DD')
       const entry = byDate.get(date) || { tokens: 0, input: 0, output: 0, reasoning: 0, cost: 0, messages: 0 }
       entry.tokens += r.inputTokens + r.outputTokens + r.reasoningTokens
       entry.input += r.inputTokens
@@ -136,7 +137,7 @@ export function Usage() {
       {data && data.usageHistory.length > 0 && (
         <div style={{ maxWidth: 900, marginTop: 32 }}>
           <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 12 }}>Activity</h3>
-          <MiniHeatmap data={heatmapData} weeks={20} showLabels={true} cellSize={12} />
+          <MiniHeatmap data={heatmapData} weeks={52} showLabels={true} cellSize={14} />
 
           <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, margin: '28px 0 12px' }}>Usage History</h3>
           <table className="session-table">
