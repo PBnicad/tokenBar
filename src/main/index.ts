@@ -65,21 +65,25 @@ async function doSync(): Promise<void> {
   }
 }
 
+function getIconPath(): string {
+  if (electron.app.isPackaged) {
+    return path.join(process.resourcesPath, 'icon.ico')
+  }
+  return path.join(__dirname, '../../build/icon.ico')
+}
+
 function createTray(): void {
   if (tray) return
-  const iconPath = path.join(__dirname, '../../build/icon.png')
   let icon: electron.NativeImage
   try {
-    icon = nativeImage.createFromPath(iconPath)
+    icon = nativeImage.createFromPath(getIconPath())
     if (icon.isEmpty()) throw new Error('empty')
-    // Resize for tray (16x16 on most platforms)
     icon = icon.resize({ width: 16, height: 16 })
   } catch {
-    // Fallback: generate a simple colored dot
     icon = nativeImage.createEmpty()
   }
   tray = new electron.Tray(icon)
-  tray.setToolTip('opencodeBar')
+  tray.setToolTip('tokenBar')
 
   const contextMenu = electron.Menu.buildFromTemplate([
     {
@@ -111,17 +115,16 @@ function createTray(): void {
 }
 
 function createWindow(): void {
-  const iconPath = path.join(__dirname, '../../build/icon.png')
   mainWindow = new electron.BrowserWindow({
     width: 1280,
     height: 860,
     minWidth: 960,
     minHeight: 640,
-    title: 'opencodeBar',
+    title: 'tokenBar',
     backgroundColor: '#0f0f14',
     frame: false,
     show: false,
-    icon: iconPath,
+    icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
