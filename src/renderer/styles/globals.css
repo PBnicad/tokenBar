@@ -1309,7 +1309,28 @@ body {
   height: 100%;
   background: var(--accent);
   border-radius: 2px;
-  transition: width var(--transition-normal);
+  transition: width 300ms ease;
+}
+
+.update-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: var(--text-xs);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.update-bar-info {
+  background: var(--info);
+}
+
+.update-bar .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* ---- Toggle Switch ---- */

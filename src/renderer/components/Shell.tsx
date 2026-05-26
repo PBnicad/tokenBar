@@ -18,6 +18,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
   })
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string } | null>(null)
+  const [updateDownloaded, setUpdateDownloaded] = useState(false)
+
+  useEffect(() => {
+    const unsub1 = api.onUpdateAvailable((info: unknown) => {
+      setUpdateAvailable(info as { version: string })
+    })
+    const unsub2 = api.onUpdateDownloaded(() => {
+      setUpdateDownloaded(true)
+    })
+    return () => { unsub1(); unsub2() }
+  }, [])
 
   useEffect(() => {
     const unsub1 = api.onConnectionStatus((s) =>
@@ -116,6 +128,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <main className="main-content">
+        {updateDownloaded && (
+          <div className="update-bar">
+            <span>Update ready. Restart to install.</span>
+            <button className="btn btn-small btn-primary" onClick={() => api.installUpdate()}>
+              Restart Now
+            </button>
+          </div>
+        )}
+        {updateAvailable && !updateDownloaded && (
+          <div className="update-bar update-bar-info">
+            <span>v{updateAvailable?.version} available, downloading...</span>
+          </div>
+        )}
         {syncProgress && (
           <div className="sync-bar">
             <span>{t('sync.syncingProgress', { current: syncProgress.current, total: syncProgress.total })}</span>

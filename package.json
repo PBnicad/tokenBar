@@ -5,14 +5,12 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "concurrently -k --names renderer,electron \"vite dev --config vite.renderer.config.ts --port 5173 --strictPort --host 127.0.0.1\" \"wait-on tcp:127.0.0.1:5173 && npx electron . --dev\"",
-    "dev:build": "electron-vite build && npm run dev",
     "build": "electron-vite build",
-    "build:main": "electron-vite build --config electron.vite.config.ts",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "npx electron-builder install-app-deps"
   },
   "build": {
     "appId": "com.tokenbar.app",
@@ -30,14 +28,18 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
@@ -47,11 +49,15 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "dmg",
-          "arch": ["arm64"]
+          "arch": [
+            "arm64"
+          ]
         }
       ],
       "icon": "build/icon.icns",
@@ -61,15 +67,22 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.png",
       "category": "Development"
     },
-    "publish": null
+    "publish": {
+      "provider": "github",
+      "owner": "PBnicad",
+      "repo": "tokenBar"
+    }
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "sql.js": "^1.12.0"
   },
   "devDependencies": {
@@ -78,12 +91,12 @@
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.2.1",
     "dayjs": "^1.11.13",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "wait-on": "^9.0.10"

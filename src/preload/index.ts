@@ -69,6 +69,17 @@ const api = {
     ipcRenderer.on('data:updated', handler)
     return () => ipcRenderer.removeListener('data:updated', handler)
   },
+  onUpdateAvailable: (callback: (info: unknown) => void) => {
+    const handler = (_event: unknown, info: unknown) => callback(info)
+    ipcRenderer.on('update:available', handler)
+    return () => ipcRenderer.removeListener('update:available', handler)
+  },
+  onUpdateDownloaded: (callback: (info: unknown) => void) => {
+    const handler = (_event: unknown, info: unknown) => callback(info)
+    ipcRenderer.on('update:downloaded', handler)
+    return () => ipcRenderer.removeListener('update:downloaded', handler)
+  },
+  installUpdate: () => ipcRenderer.invoke('update:install'),
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),

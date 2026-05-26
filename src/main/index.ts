@@ -1,5 +1,6 @@
 import electron, { nativeImage } from 'electron'
 import path from 'path'
+import { autoUpdater } from 'electron-updater'
 import { registerIpcHandlers } from './ipc'
 import { initDatabase, closeDatabase } from './db'
 import { syncAllHistory, startPeriodicAggregation, type SyncProgressEvent } from './sync'
@@ -183,8 +184,39 @@ electron.app.whenReady().then(async () => {
   electron.ipcMain.on('window:close', () => mainWindow?.close())
   electron.ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false)
 
+  // Update IPC
+  electron.ipcMain.handle('update:install', () => {
+    autoUpdater.quitAndInstall()
+  })
+
   // Initial sync
   await doSync()
+
+  // ---- Auto-update ----
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('update-available', (info) => {
+    for (const win of electron.BrowserWindow.getAllWindows()) {
+      win.webContents.send('update:available', info)
+    }
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    for (const win of electron.BrowserWindow.getAllWindows()) {
+      win.webContents.send('update:downloaded', info)
+    }
+  })
+
+  autoUpdater.on('error', (err) => {
+    console.error('[update] Error:', err.message)
+  })
+
+  // Check for updates (every 4 hours)
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {})
+  setInterval(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch(() => {})
+  }, 4 * 60 * 60 * 1000)
 
   // Start periodic aggregation
   startPeriodicAggregation()
