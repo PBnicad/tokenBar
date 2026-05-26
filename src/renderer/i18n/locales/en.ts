@@ -6,6 +6,7 @@ const en = {
     dashboard: 'Dashboard',
     models: 'Models',
     sessions: 'Sessions',
+    usage: 'Usage',
     settings: 'Settings',
   },
   status: {

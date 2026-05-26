@@ -7,7 +7,7 @@ import { TitleBar } from './TitleBar'
 import { SourceDropdown } from './SourceDropdown'
 import type { ConnectionStatus, SyncProgress } from '@shared/types'
 
-const navKeys = ['dashboard', 'models', 'sessions'] as const
+const navKeys = ['dashboard', 'models', 'sessions', 'usage'] as const
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useT()
@@ -85,11 +85,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <circle cx="10" cy="4" r="2" />
                     <circle cx="7" cy="10" r="3" />
                   </svg>
-                ) : (
+                ) : key === 'sessions' ? (
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
                     <line x1="2" y1="3" x2="12" y2="3" />
                     <line x1="2" y1="7" x2="12" y2="7" />
                     <line x1="2" y1="11" x2="8" y2="11" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
+                    <path d="M7 1v12M1 7h12" />
                   </svg>
                 )}
               </span>
@@ -193,6 +197,8 @@ function SettingsPanel({
   const [opencodeAvail, setOpencodeAvail] = useState(false)
   const [piPath, setPiPath] = useState('')
   const [piAvail, setPiAvail] = useState(false)
+  const [ogWorkspaceId, setOgWorkspaceId] = useState('')
+  const [ogAuthCookie, setOgAuthCookie] = useState('')
 
   useEffect(() => {
     api.settings.get().then((s) => {
@@ -202,12 +208,17 @@ function SettingsPanel({
     })
     api.agentConfig.isAvailable('opencode').then((a: boolean) => setOpencodeAvail(a))
     api.agentConfig.isAvailable('pi-agent').then((a: boolean) => setPiAvail(a))
+    api.opencodeGo.getConfig().then((c: { workspaceId: string; authCookie: string }) => {
+      if (c.workspaceId) setOgWorkspaceId(c.workspaceId)
+      if (c.authCookie) setOgAuthCookie(c.authCookie)
+    })
   }, [])
 
   const save = () => {
     api.settings.set({ syncOnStart, dbPath: opencodePath, piAgentSessionDir: piPath })
     api.agentConfig.setPath('opencode', opencodePath)
     api.agentConfig.setPath('pi-agent', piPath)
+    api.opencodeGo.saveConfig(ogWorkspaceId, ogAuthCookie)
     onClose()
   }
 
@@ -271,6 +282,37 @@ function SettingsPanel({
             autoDetectLabel={t('settings.autoDetect')}
             browseLabel={t('settings.browse')}
           />
+        </div>
+
+        {/* ── OpenCode Go ── */}
+        <div className="settings-section">
+          <h3>OpenCode Go</h3>
+          <p className="settings-section-desc">
+            Cloud subscription quota (rolling/weekly/monthly). Credentials from your opencode.ai session.
+          </p>
+          <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ width: '100%' }}>
+              <div className="setting-label">Workspace ID</div>
+            </div>
+            <input
+              className="search-input"
+              style={{ maxWidth: '100%', width: '100%' }}
+              value={ogWorkspaceId}
+              onChange={(e) => setOgWorkspaceId(e.target.value)}
+              placeholder="wrk_xxxxxxxx"
+            />
+            <div style={{ width: '100%' }}>
+              <div className="setting-label">Auth Cookie</div>
+              <div className="setting-desc">From browser DevTools → Application → Cookies → opencode.ai → auth</div>
+            </div>
+            <input
+              className="search-input"
+              style={{ maxWidth: '100%', width: '100%' }}
+              value={ogAuthCookie}
+              onChange={(e) => setOgAuthCookie(e.target.value)}
+              placeholder="Fe26.2**..."
+            />
+          </div>
         </div>
 
         {/* ── Appearance ── */}

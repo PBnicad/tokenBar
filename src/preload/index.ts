@@ -90,6 +90,13 @@ const api = {
       ipcRenderer.on('window:maximized', handler)
       return () => ipcRenderer.removeListener('window:maximized', handler)
     }
+  },
+  opencodeGo: {
+    quota: () => ipcRenderer.invoke('opencodego:quota'),
+    configured: () => ipcRenderer.invoke('opencodego:configured'),
+    saveConfig: (workspaceId: string, authCookie: string) =>
+      ipcRenderer.invoke('opencodego:saveConfig', { workspaceId, authCookie }),
+    getConfig: () => ipcRenderer.invoke('opencodego:getConfig'),
   }
 }
 

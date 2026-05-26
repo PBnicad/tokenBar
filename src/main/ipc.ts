@@ -13,6 +13,7 @@ import { syncAllHistory } from './sync'
 import { getAvailableAdapters } from './adapters/registry'
 import { opencodeAdapter } from './adapters/opencode'
 import { piAgentAdapter } from './adapters/pi-agent'
+import { fetchOpenCodeGoQuota, isOpenCodeGoConfigured } from './adapters/opencode-go'
 import type { ConnectionStatus, SettingsData, SyncProgressEvent } from '../shared/types'
 import { getAppSetting, setAppSetting, getDbPath as getLocalDbPath } from './db'
 
@@ -172,6 +173,29 @@ export function registerIpcHandlers(): void {
   electron.ipcMain.handle('sessions:detail', (_event, { sessionId, source }: { sessionId: string; source?: string }) =>
     getSessionDetail(sessionId, source)
   )
+
+  // ---- OpenCode Go quota ----
+
+  electron.ipcMain.handle('opencodego:quota', async () => {
+    try {
+      return await fetchOpenCodeGoQuota()
+    } catch (err) {
+      return { error: (err as Error).message }
+    }
+  })
+
+  electron.ipcMain.handle('opencodego:configured', () => isOpenCodeGoConfigured())
+
+  electron.ipcMain.handle('opencodego:saveConfig', (_event, { workspaceId, authCookie }: { workspaceId: string; authCookie: string }) => {
+    setAppSetting('opencodego.workspaceId', workspaceId)
+    setAppSetting('opencodego.authCookie', authCookie)
+    return true
+  })
+
+  electron.ipcMain.handle('opencodego:getConfig', () => ({
+    workspaceId: getAppSetting('opencodego.workspaceId') || '',
+    authCookie: getAppSetting('opencodego.authCookie') || '',
+  }))
 
   // ---- Sync ----
 

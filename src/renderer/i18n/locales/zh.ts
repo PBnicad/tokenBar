@@ -6,6 +6,7 @@ const zh = {
     dashboard: '仪表盘',
     models: '模型',
     sessions: '会话',
+    usage: '用量',
     settings: '设置',
   },
   status: {
