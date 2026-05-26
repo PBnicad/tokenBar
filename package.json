@@ -23,6 +23,7 @@
       "out/**/*",
       "package.json"
     ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "win": {
       "signAndEditExecutable": false,
       "target": [

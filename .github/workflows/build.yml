@@ -49,6 +49,26 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Rename artifacts with platform labels
+        if: always()
+        shell: bash
+        run: |
+          cd dist || exit 0
+          for f in *win-x64*; do
+            [ -f "$f" ] && mv "$f" "${f//win-x64/windows-x64}"
+          done
+          for f in *mac-x64*; do
+            [ -f "$f" ] && mv "$f" "${f//mac-x64/macos-x64}"
+          done
+          for f in *mac-arm64*; do
+            [ -f "$f" ] && mv "$f" "${f//mac-arm64/macos-arm64}"
+          done
+          for f in *linux-x64*; do
+            [ -f "$f" ] && mv "$f" "${f//linux-x64/linux-x64}"
+          done
+          echo "=== dist contents ==="
+          ls -la || true
+
       - name: List dist contents (diagnostic)
         if: always()
         shell: bash
@@ -57,18 +77,6 @@ jobs:
           ls -la dist/ || echo "dist directory not found"
           echo "=== dist files ==="
           find dist -type f -name "*" | head -50 || true
-
-      - name: Rename macOS x64 DMG
-        if: matrix.target == 'mac'
-        shell: bash
-        run: |
-          cd dist
-          for f in *.dmg; do
-            if [[ "$f" != *-arm64.dmg ]]; then
-              mv "$f" "${f%.dmg}-x64.dmg"
-              break
-            fi
-          done
 
       - name: Upload Windows installer
         if: matrix.target == 'win'
