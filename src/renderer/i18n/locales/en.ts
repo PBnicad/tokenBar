@@ -104,6 +104,17 @@ const en = {
     cost: 'Cost',
     tokens: 'Tokens',
   },
+  usage: {
+    title: 'OpenCode Go',
+    subtitle: 'Cloud subscription usage',
+    notConfigured: 'OpenCode Go not configured. Add your workspace ID and auth cookie in Settings.',
+    loading: 'Loading...',
+    resetsIn: 'resets in',
+    used: 'used',
+    lastUpdated: 'Last updated',
+    refresh: 'Refresh',
+    retry: 'Retry',
+  },
 }
 
 export default en

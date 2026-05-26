@@ -104,6 +104,17 @@ const zh = {
     cost: '花费',
     tokens: 'Token',
   },
+  usage: {
+    title: 'OpenCode Go',
+    subtitle: '云端订阅用量',
+    notConfigured: 'OpenCode Go 未配置。请在设置中填写 Workspace ID 和 Auth Cookie。',
+    loading: '加载中...',
+    resetsIn: '重置于',
+    used: '已用',
+    lastUpdated: '最后更新',
+    refresh: '刷新',
+    retry: '重试',
+  },
 }
 
 export default zh
