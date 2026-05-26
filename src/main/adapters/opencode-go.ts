@@ -12,7 +12,21 @@ export interface OpenCodeGoSnapshot {
   rolling: OpenCodeGoWindow | null
   weekly: OpenCodeGoWindow | null
   monthly: OpenCodeGoWindow | null
+  usageHistory: OpenCodeGoUsageRecord[]
   fetchedAt: number
+}
+
+export interface OpenCodeGoUsageRecord {
+  id: string
+  timeCreated: string
+  model: string
+  provider: string
+  inputTokens: number
+  outputTokens: number
+  reasoningTokens: number
+  cacheReadTokens: number
+  cost: number
+  keyID: string
 }
 
 async function fetchWithAuth(url: string): Promise<string> {
@@ -102,12 +116,62 @@ export async function fetchOpenCodeGoQuota(workspaceId?: string): Promise<OpenCo
 
   const html = await fetchWithAuth(`https://opencode.ai/workspace/${encodeURIComponent(id)}/go`)
 
+  // Fetch usage history separately
+  let usageHistory: OpenCodeGoUsageRecord[] = []
+  try {
+    const usageHtml = await fetchWithAuth(`https://opencode.ai/workspace/${encodeURIComponent(id)}/usage`)
+    usageHistory = extractUsageHistory(usageHtml)
+  } catch {
+    // usage history is optional
+  }
+
   return {
     rolling: extractWindow(html, 'rollingUsage'),
     weekly: extractWindow(html, 'weeklyUsage'),
     monthly: extractWindow(html, 'monthlyUsage'),
+    usageHistory,
     fetchedAt: Date.now(),
   }
+}
+
+function extractUsageHistory(html: string): OpenCodeGoUsageRecord[] {
+  const records: OpenCodeGoUsageRecord[] = []
+  // Match usage record objects: usg_XXXX",...model:"...",...cost:123456,...
+  const usgRegex = /(usg_[A-Z0-9]+)",workspaceID:"([^"]+)",timeCreated:\$R\[\d+\]=new Date\("([^"]+)"\).*?model:"([^"]*)",provider:"([^"]*)",inputTokens:(\d+),outputTokens:(\d+),reasoningTokens:(\d+),cacheReadTokens:(\d+).*?cost:(\d+)/g
+  let match
+  while ((match = usgRegex.exec(html)) !== null) {
+    records.push({
+      id: match[1],
+      timeCreated: match[3],
+      model: match[4],
+      provider: match[5],
+      inputTokens: parseInt(match[6]) || 0,
+      outputTokens: parseInt(match[7]) || 0,
+      reasoningTokens: parseInt(match[8]) || 0,
+      cacheReadTokens: parseInt(match[9]) || 0,
+      cost: parseInt(match[10]) || 0,
+      keyID: '',
+    })
+  }
+  if (records.length === 0) {
+    // Fallback: looser match
+    const re2 = /id:"(usg_[^"]+)".*?timeCreated:\$R\[\d+\]=new Date\("([^"]+)"\).*?model:"([^"]*)".*?provider:"([^"]*)".*?inputTokens:(\d+).*?outputTokens:(\d+).*?reasoningTokens:(\d+).*?cacheReadTokens:(\d+).*?cost:(\d+)/g
+    while ((match = re2.exec(html)) !== null) {
+      records.push({
+        id: match[1],
+        timeCreated: match[2],
+        model: match[3],
+        provider: match[4],
+        inputTokens: parseInt(match[5]) || 0,
+        outputTokens: parseInt(match[6]) || 0,
+        reasoningTokens: parseInt(match[7]) || 0,
+        cacheReadTokens: parseInt(match[8]) || 0,
+        cost: parseInt(match[9]) || 0,
+        keyID: '',
+      })
+    }
+  }
+  return records
 }
 
 export function isOpenCodeGoConfigured(): boolean {

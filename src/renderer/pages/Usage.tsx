@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useT } from '../i18n'
-import type { OpenCodeGoSnapshot, OpenCodeGoWindow } from '../../main/adapters/opencode-go'
+import type { OpenCodeGoSnapshot, OpenCodeGoWindow, OpenCodeGoUsageRecord } from '../../main/adapters/opencode-go'
 
 function formatReset(seconds: number): string {
   if (seconds <= 0) return 'now'
@@ -11,6 +11,12 @@ function formatReset(seconds: number): string {
   if (d > 0) return `${d}d ${h}h`
   if (h > 0) return `${h}h ${m}m`
   return `${m}m`
+}
+
+function formatTokens(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`
+  return String(v)
 }
 
 function UsageBar({ label, window, t }: {
@@ -104,6 +110,44 @@ export function Usage() {
             {t('usage.lastUpdated')}: {new Date(data.fetchedAt).toLocaleString()}
             <button className="btn btn-small" style={{ marginLeft: 12 }} onClick={fetchQuota}>{t('usage.refresh')}</button>
           </div>
+        </div>
+      )}
+
+      {data && data.usageHistory.length > 0 && (
+        <div style={{ maxWidth: 900, marginTop: 32 }}>
+          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 12 }}>Usage History</h3>
+          <table className="session-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Reasoning</th>
+                <th>Cache</th>
+                <th>Cost</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.usageHistory.map((r: OpenCodeGoUsageRecord) => (
+                <tr key={r.id}>
+                  <td style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--accent-text)' }}>
+                    {r.model}
+                  </td>
+                  <td className="mono">{formatTokens(r.inputTokens)}</td>
+                  <td className="mono">{formatTokens(r.outputTokens)}</td>
+                  <td className="mono">{formatTokens(r.reasoningTokens)}</td>
+                  <td className="mono">{formatTokens(r.cacheReadTokens)}</td>
+                  <td className="mono" style={{ color: 'var(--accent-text)' }}>
+                    ${(r.cost / 1000000).toFixed(4)}
+                  </td>
+                  <td style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                    {new Date(r.timeCreated).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
